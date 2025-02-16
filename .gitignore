@@ -1,0 +1,32 @@
+# Ignorar a pasta node_modules
+node_modules/
+vercel/
+
+# Ignorar arquivos de ambiente (variáveis sensíveis)
+.env
+.env.local
+.env.development
+.env.production
+.vercel
+
+# Ignorar logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignorar pastas de build/dist
+dist/
+build/
+
+# Ignorar configurações do IDE/Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ignorar arquivos de sistema
+.DS_Store
+Thumbs.db
