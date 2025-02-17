@@ -1,22 +1,29 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const { Pool } = require('pg');
+const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
+// Middleware para permitir CORS e parsear JSON
 app.use(cors());
+app.use(express.json());
 
+// Configuração do Pool de conexão com o PostgreSQL
 const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    ssl: process.env.DB_SSL === 'true',
+    user: process.env.PGUSER || 'postgres',
+    host: process.env.PGHOST || 'expressly-reliable-platy.data-1.use1.tembo.io',
+    database: process.env.PGDATABASE || 'postgres',
+    password: process.env.PGPASSWORD || 'zkgKkrl8be0Ypqmo',
+    port: process.env.PGPORT || 5432,
+    ssl: {
+        rejectUnauthorized: false, // Use true em produção com um certificado válido
+    },
 });
+
+// Servir arquivos estáticos (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname)));
 
 // Rota de login
 app.post('/login', async (req, res) => {
