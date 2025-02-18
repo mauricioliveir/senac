@@ -3,20 +3,29 @@ document.getElementById('login-form').addEventListener('submit', async function(
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
-    const response = await fetch('http://localhost:3000/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-    });
+    try {
+        const response = await fetch('https://senac-eta.vercel.app/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+        });
 
-    const result = await response.json();
-    if (response.ok) {
-        alert(result.message);
-        // Redirecionar para a página de dashboard ou outra página
-    } else {
-        document.getElementById('error-message').textContent = result.message;
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(result.message);
+            // Armazena o estado de login no localStorage
+            localStorage.setItem('isLoggedIn', 'true');
+            // Redireciona para a página principal
+            window.location.href = 'principal.html';
+        } else {
+            document.getElementById('error-message').textContent = result.message;
+        }
+    } catch (error) {
+        console.error('Erro ao fazer login:', error);
+        alert('Erro ao conectar ao servidor.');
     }
 });
 
@@ -26,20 +35,27 @@ document.getElementById('register-form').addEventListener('submit', async functi
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
-    const response = await fetch('http://localhost:3000/register', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ nome, email, password }),
-    });
+    try {
+        const response = await fetch('https://senac-eta.vercel.app/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ nome, email, password }),
+        });
 
-    const result = await response.json();
-    if (response.ok) {
-        alert(result.message);
-        // Redirecionar para a página de login
-    } else {
-        document.getElementById('error-message').textContent = result.message;
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(result.message);
+            // Redireciona para a página de login após o registro
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('error-message').textContent = result.message;
+        }
+    } catch (error) {
+        console.error('Erro ao registrar:', error);
+        alert('Erro ao conectar ao servidor.');
     }
 });
 
@@ -47,18 +63,24 @@ document.getElementById('reset-password-form').addEventListener('submit', async 
     event.preventDefault();
     const email = document.getElementById('email').value;
 
-    const response = await fetch('http://localhost:3000/reset-password', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-    });
+    try {
+        const response = await fetch('https://senac-eta.vercel.app/reset-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
 
-    const result = await response.json();
-    if (response.ok) {
-        alert(result.message);
-    } else {
-        document.getElementById('error-message').textContent = result.message;
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(result.message);
+        } else {
+            document.getElementById('error-message').textContent = result.message;
+        }
+    } catch (error) {
+        console.error('Erro ao redefinir senha:', error);
+        alert('Erro ao conectar ao servidor.');
     }
 });
