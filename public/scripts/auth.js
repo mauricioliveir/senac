@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch('https://senac-eta.vercel.app/login', {
+                const response = await fetch('https://senac-eta.vercel.app/login.html', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch('https://senac-eta.vercel.app/register', {
+                const response = await fetch('https://senac-eta.vercel.app/register.html', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const email = document.getElementById('email').value;
 
             try {
-                const response = await fetch('https://senac-eta.vercel.app/reset-password', {
+                const response = await fetch('https://senac-eta.vercel.app/reset-password.html', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
