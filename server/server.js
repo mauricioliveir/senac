@@ -6,10 +6,6 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware para permitir CORS e parsear JSON
-app.use(cors());
-app.use(express.json());
-
 // Configuração do Pool de conexão com o PostgreSQL
 const pool = new Pool({
     user: process.env.PGUSER || 'postgres',
@@ -22,26 +18,91 @@ const pool = new Pool({
     },
 });
 
-// Servir arquivos estáticos (HTML, CSS, JS)
-app.use(express.static(path.join(__dirname)));
+// Middleware para permitir CORS e parsear JSON
+app.use(cors());
+app.use(express.json());
 
-// Rota de login
+// Servir arquivos estáticos (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Rota para o login
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
+
     try {
-        console.log('Tentativa de login:', email); // Log para depuração
-        const result = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
+        // Verifique as credenciais no banco de dados
+        const result = await pool.query(
+            'SELECT * FROM public.users WHERE email = $1 AND password = $2',
+            [email, password]
+        );
+
         if (result.rows.length > 0) {
-            res.status(200).json({ message: 'Login bem-sucedido' });
+            res.json({ success: true, message: 'Login bem-sucedido!', user: result.rows[0] });
         } else {
-            res.status(401).json({ message: 'Credenciais inválidas' });
+            res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
         }
     } catch (err) {
-        console.error('Erro no login:', err); // Log para depuração
-        res.status(500).json({ message: 'Erro no servidor' });
+        console.error('Erro ao fazer login:', err);
+        res.status(500).json({ success: false, message: 'Erro no servidor.' });
     }
 });
 
+// Rota para o registro
+app.post('/register', async (req, res) => {
+    const { nome, email, password } = req.body;
+
+    try {
+        // Verifique se o usuário já existe
+        const userExists = await pool.query(
+            'SELECT * FROM public.users WHERE email = $1',
+            [email]
+        );
+
+        if (userExists.rows.length > 0) {
+            return res.status(400).json({ success: false, message: 'Usuário já cadastrado.' });
+        }
+
+        // Insira o novo usuário no banco de dados
+        const result = await pool.query(
+            'INSERT INTO public.users (nome, email, password) VALUES ($1, $2, $3) RETURNING *',
+            [nome, email, password]
+        );
+
+        res.json({ success: true, message: 'Usuário registrado com sucesso!', user: result.rows[0] });
+    } catch (err) {
+        console.error('Erro ao registrar usuário:', err);
+        res.status(500).json({ success: false, message: 'Erro no servidor.' });
+    }
+});
+
+// Rota para redefinição de senha
+app.post('/reset-password', async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        // Verifique se o e-mail existe no banco de dados
+        const result = await pool.query(
+            'SELECT * FROM public.users WHERE email = $1',
+            [email]
+        );
+
+        if (result.rows.length > 0) {
+            res.json({ success: true, message: 'Instruções de redefinição de senha enviadas para o e-mail.' });
+        } else {
+            res.status(404).json({ success: false, message: 'E-mail não encontrado.' });
+        }
+    } catch (err) {
+        console.error('Erro ao redefinir senha:', err);
+        res.status(500).json({ success: false, message: 'Erro no servidor.' });
+    }
+});
+
+// Rota padrão para servir o arquivo login.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Iniciar o servidor
 app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
+    console.log(`Servidor rodando em http://localhost:${port}`);
 });
