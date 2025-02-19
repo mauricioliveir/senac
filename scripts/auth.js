@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            const response = await fetch(`${backendUrl}/login`, {
+            const response = await fetch(`${backendUrl}/login.html`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            const response = await fetch(`${backendUrl}/register`, {
+            const response = await fetch(`${backendUrl}/register.html`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const email = document.getElementById('email').value;
 
-            const response = await fetch(`${backendUrl}/reset-password`, {
+            const response = await fetch(`${backendUrl}/reset-password.html`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
