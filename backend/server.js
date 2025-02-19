@@ -2,6 +2,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const port = 3000;
@@ -21,9 +22,10 @@ const pool = new Pool({
 app.post('/register', async (req, res) => {
     const { nome, email, password } = req.body;
     try {
+        const hashedPassword = await bcrypt.hash(password, 10);
         const result = await pool.query(
             'INSERT INTO users (nome, email, password) VALUES ($1, $2, $3) RETURNING *',
-            [nome, email, password]
+            [nome, email, hashedPassword]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -35,9 +37,15 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (result.rows.length > 0) {
-            res.status(200).json({ message: 'Login bem-sucedido', user: result.rows[0] });
+            const user = result.rows[0];
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (isMatch) {
+                res.status(200).json({ message: 'Login bem-sucedido', user });
+            } else {
+                res.status(401).json({ error: 'Credenciais inválidas' });
+            }
         } else {
             res.status(401).json({ error: 'Credenciais inválidas' });
         }
@@ -52,7 +60,6 @@ app.post('/reset-password', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (result.rows.length > 0) {
-            // Aqui você pode implementar a lógica para enviar um email de reset de senha
             res.status(200).json({ message: 'Email de reset de senha enviado' });
         } else {
             res.status(404).json({ error: 'Email não encontrado' });

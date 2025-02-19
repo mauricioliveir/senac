@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 localStorage.setItem('isLoggedIn', 'true');
-                window.location.href = 'index.html';
+                window.location.href = 'principal.html';
             } else {
                 document.getElementById('error-message').textContent = data.error;
             }
