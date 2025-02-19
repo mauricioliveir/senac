@@ -13,24 +13,29 @@ app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Rota de Registro
-app.post("/register", async (req, res) => {
+// ✅ Rota de Registro de Usuário
+app.post("/api/auth/register", async (req, res) => {
     const { nome, email, password } = req.body;
+
+    if (!nome || !email || !password) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+    }
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const result = await pool.query(
-            "INSERT INTO users (nome, email, password) VALUES ($1, $2, $3) RETURNING id, email",
+            "INSERT INTO users (nome, email, password) VALUES ($1, $2, $3) RETURNING id, nome, email",
             [nome, email, hashedPassword]
         );
         res.status(201).json({ user: result.rows[0] });
     } catch (error) {
+        console.error("Erro ao registrar usuário:", error);
         res.status(500).json({ error: "Erro ao registrar usuário" });
     }
 });
 
-// Rota de Login
-app.post("/login", async (req, res) => {
+// ✅ Rota de Login
+app.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
 
     try {
@@ -44,11 +49,12 @@ app.post("/login", async (req, res) => {
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
         res.json({ token });
     } catch (error) {
+        console.error("Erro ao fazer login:", error);
         res.status(500).json({ error: "Erro ao fazer login" });
     }
 });
 
-// Middleware de autenticação
+// ✅ Middleware de Autenticação
 const verifyToken = (req, res, next) => {
     const token = req.headers["authorization"];
     if (!token) return res.status(403).json({ error: "Token necessário" });
@@ -60,27 +66,31 @@ const verifyToken = (req, res, next) => {
     });
 };
 
-// Rota de usuário autenticado
-app.get("/user", verifyToken, async (req, res) => {
+// ✅ Rota para obter dados do usuário autenticado
+app.get("/api/auth/user", verifyToken, async (req, res) => {
     try {
         const result = await pool.query("SELECT id, nome, email FROM users WHERE id = $1", [req.user.id]);
         res.json(result.rows[0]);
     } catch (error) {
+        console.error("Erro ao buscar usuário:", error);
         res.status(500).json({ error: "Erro ao buscar usuário" });
     }
 });
 
-// Rota de recuperação de senha (simples)
-app.post("/reset-password", async (req, res) => {
+// ✅ Rota para redefinir senha
+app.post("/api/auth/reset-password", async (req, res) => {
     const { email, newPassword } = req.body;
+
     try {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await pool.query("UPDATE users SET password = $1 WHERE email = $2", [hashedPassword, email]);
         res.json({ message: "Senha redefinida com sucesso" });
     } catch (error) {
+        console.error("Erro ao redefinir senha:", error);
         res.status(500).json({ error: "Erro ao redefinir senha" });
     }
 });
 
-const PORT = 3000;
+// 🚀 Inicia o servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
