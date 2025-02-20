@@ -1,74 +1,97 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { Pool } = require("pg");
+const express = require('express');
+const { Pool } = require('pg');
+const path = require('path');
+const cors = require('cors');
 
 const app = express();
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const port = process.env.PORT || 3000;
 
+// Configuração do Pool de conexão com o PostgreSQL
+const pool = new Pool({
+    user: process.env.PGUSER || 'postgres',
+    host: process.env.PGHOST || 'expressly-reliable-platy.data-1.use1.tembo.io',
+    database: process.env.PGDATABASE || 'postgres',
+    password: process.env.PGPASSWORD || 'zkgKkrl8be0Ypqmo',
+    port: process.env.PGPORT || 5432,
+    ssl: {
+        rejectUnauthorized: false, // Use true em produção com um certificado válido
+    },
+});
+
+// Middleware para permitir CORS e parsear JSON
 app.use(cors());
 app.use(express.json());
 
-const JWT_SECRET = process.env.JWT_SECRET;
+// Servir arquivos estáticos (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Rota de Registro
-app.post("/register", async (req, res) => {
+// Rota para o registro
+app.post('/register', async (req, res) => {
     const { nome, email, password } = req.body;
 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const result = await pool.query(
-            "INSERT INTO users (nome, email, password) VALUES ($1, $2, $3) RETURNING id, email",
-            [nome, email, hashedPassword]
+        // Verifique se o usuário já existe
+        const userExists = await pool.query(
+            'SELECT * FROM public.users WHERE email = $1',
+            [email]
         );
-        res.status(201).json({ user: result.rows[0] });
-    } catch (error) {
-        res.status(500).json({ error: "Erro ao registrar usuário" });
+
+        if (userExists.rows.length > 0) {
+            return res.status(400).json({ success: false, message: 'Usuário já cadastrado.' });
+        }
+
+        // Insira o novo usuário no banco de dados
+        const result = await pool.query(
+            'INSERT INTO public.users (nome, email, password) VALUES ($1, $2, $3) RETURNING *',
+            [nome, email, password]
+        );
+
+        res.json({ success: true, message: 'Usuário registrado com sucesso!', user: result.rows[0] });
+    } catch (err) {
+        console.error('Erro ao registrar usuário:', err);
+        res.status(500).json({ success: false, message: 'Erro no servidor.' });
     }
 });
 
-// Rota de Login
-app.post("/login", async (req, res) => {
+// Rota para o login
+app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-        if (result.rows.length === 0) return res.status(400).json({ error: "Usuário não encontrado" });
+        // Verifique as credenciais no banco de dados
+        const result = await pool.query(
+            'SELECT * FROM public.users WHERE email = $1 AND password = $2',
+            [email, password]
+        );
 
-        const user = result.rows[0];
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) return res.status(401).json({ error: "Senha incorreta" });
-
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
-        res.json({ token });
-    } catch (error) {
-        res.status(500).json({ error: "Erro ao fazer login" });
+        if (result.rows.length > 0) {
+            res.json({ success: true, message: 'Login bem-sucedido!', user: result.rows[0] });
+        } else {
+            res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
+        }
+    } catch (err) {
+        console.error('Erro ao fazer login:', err);
+        res.status(500).json({ success: false, message: 'Erro no servidor.' });
     }
 });
 
-// Middleware de autenticação
-const verifyToken = (req, res, next) => {
-    const token = req.headers["authorization"];
-    if (!token) return res.status(403).json({ error: "Token necessário" });
-
-    jwt.verify(token.split(" ")[1], JWT_SECRET, (err, decoded) => {
-        if (err) return res.status(401).json({ error: "Token inválido" });
-        req.user = decoded;
-        next();
-    });
-};
-
-// Rota de usuário autenticado
-app.get("/user", verifyToken, async (req, res) => {
+// Rota para listar usuários
+app.get('/users', async (req, res) => {
     try {
-        const result = await pool.query("SELECT id, nome, email FROM users WHERE id = $1", [req.user.id]);
-        res.json(result.rows[0]);
-    } catch (error) {
-        res.status(500).json({ error: "Erro ao buscar usuário" });
+        const result = await pool.query('SELECT * FROM public.users');
+        res.json({ success: true, users: result.rows });
+    } catch (err) {
+        console.error('Erro ao buscar usuários:', err);
+        res.status(500).json({ success: false, message: 'Erro no servidor.' });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+// Rota padrão para servir o arquivo index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Iniciar o servidor
+app.listen(port, () => {
+    console.log(`Servidor rodando em http://localhost:${port}`);
+});
