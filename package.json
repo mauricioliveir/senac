@@ -1,0 +1,26 @@
+{
+  "name": "project_senac",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mauricioliveir/senac.git"
+  },
+  "author": "Mauricio De Oliveira",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mauricioliveir/senac/issues"
+  },
+  "homepage": "https://github.com/mauricioliveir/senac#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.17.1",
+    "project_senac": "file:"
+  }
+}
